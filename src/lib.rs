@@ -89,26 +89,25 @@ impl<T: 'static + KeyboardVisability + HintPurpose> IMService<T> {
     }
 
     fn assign_filter(&self, im_service: Rc<RefCell<IMService<T>>>) {
-        let im_service_ref = im_service;
         let filter = Filter::new(move |event, _, _| match event {
             Events::InputMethod { event, .. } => match event {
-                InputMethodEvent::Activate => im_service_ref.borrow_mut().handle_activate(),
-                InputMethodEvent::Deactivate => im_service_ref.borrow_mut().handle_deactivate(),
+                InputMethodEvent::Activate => im_service.borrow_mut().handle_activate(),
+                InputMethodEvent::Deactivate => im_service.borrow_mut().handle_deactivate(),
                 InputMethodEvent::SurroundingText {
                     text,
                     cursor,
                     anchor,
-                } => im_service_ref
+                } => im_service
                     .borrow_mut()
                     .handle_surrounding_text(text, cursor, anchor),
                 InputMethodEvent::TextChangeCause { cause } => {
-                    im_service_ref.borrow_mut().handle_text_change_cause(cause)
+                    im_service.borrow_mut().handle_text_change_cause(cause)
                 }
-                InputMethodEvent::ContentType { hint, purpose } => im_service_ref
-                    .borrow_mut()
-                    .handle_content_type(hint, purpose),
-                InputMethodEvent::Done => im_service_ref.borrow_mut().handle_done(),
-                InputMethodEvent::Unavailable => im_service_ref.borrow_mut().handle_unavailable(),
+                InputMethodEvent::ContentType { hint, purpose } => {
+                    im_service.borrow_mut().handle_content_type(hint, purpose)
+                }
+                InputMethodEvent::Done => im_service.borrow_mut().handle_done(),
+                InputMethodEvent::Unavailable => im_service.borrow_mut().handle_unavailable(),
                 _ => (),
             },
         });
