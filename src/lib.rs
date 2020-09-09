@@ -3,7 +3,9 @@
  * Library module.
  */
 
+use std::cell::RefCell;
 use std::num::Wrapping;
+use std::rc::Rc;
 use wayland_client::protocol::wl_seat::WlSeat;
 use wayland_client::{event_enum, Filter, Main};
 use wayland_protocols::unstable::text_input::v3::client::zwp_text_input_v3::{
@@ -56,19 +58,23 @@ impl Default for IMProtocolState {
     }
 }
 
-pub struct IMService<T: KeyboardVisability + HintPurpose> {
+pub struct IMService<T: 'static + KeyboardVisability + HintPurpose> {
     pub im: Main<ZwpInputMethodV2>,
-    connector: T,
+    connector: &'static T,
     pending: IMProtocolState,
     current: IMProtocolState, // turn current into an idiomatic representation?
     preedit_string: String,
     serial: Wrapping<u32>,
 }
 
-impl<T: KeyboardVisability + HintPurpose> IMService<T> {
-    pub fn new(seat: &WlSeat, im_manager: ZwpInputMethodManagerV2, connector: T) -> IMService<T> {
+impl<T: 'static + KeyboardVisability + HintPurpose> IMService<T> {
+    pub fn new(
+        seat: &WlSeat,
+        im_manager: ZwpInputMethodManagerV2,
+        connector: &'static T,
+    ) -> Rc<RefCell<IMService<T>>> {
         let im = im_manager.get_input_method(seat);
-        let mut im_service = IMService {
+        let im_service = IMService {
             im,
             connector,
             pending: IMProtocolState::default(),
@@ -76,26 +82,33 @@ impl<T: KeyboardVisability + HintPurpose> IMService<T> {
             preedit_string: String::new(),
             serial: Wrapping(0u32),
         };
-        im_service.assign_filter();
+        let im_service = Rc::new(RefCell::new(im_service));
+        let im_service_ref = Rc::clone(&im_service);
+        im_service.borrow_mut().assign_filter(im_service_ref);
         im_service
     }
 
-    fn assign_filter(&mut self) {
+    fn assign_filter(&self, im_service: Rc<RefCell<IMService<T>>>) {
+        let im_service_ref = im_service;
         let filter = Filter::new(move |event, _, _| match event {
             Events::InputMethod { event, .. } => match event {
-                InputMethodEvent::Activate => self.handle_activate(),
-                InputMethodEvent::Deactivate => self.handle_deactivate(),
+                InputMethodEvent::Activate => im_service_ref.borrow_mut().handle_activate(),
+                InputMethodEvent::Deactivate => im_service_ref.borrow_mut().handle_deactivate(),
                 InputMethodEvent::SurroundingText {
                     text,
                     cursor,
                     anchor,
-                } => self.handle_surrounding_text(text, cursor, anchor),
-                InputMethodEvent::TextChangeCause { cause } => self.handle_text_change_cause(cause),
-                InputMethodEvent::ContentType { hint, purpose } => {
-                    self.handle_content_type(hint, purpose)
+                } => im_service_ref
+                    .borrow_mut()
+                    .handle_surrounding_text(text, cursor, anchor),
+                InputMethodEvent::TextChangeCause { cause } => {
+                    im_service_ref.borrow_mut().handle_text_change_cause(cause)
                 }
-                InputMethodEvent::Done => self.handle_done(),
-                InputMethodEvent::Unavailable => self.handle_unavailable(),
+                InputMethodEvent::ContentType { hint, purpose } => im_service_ref
+                    .borrow_mut()
+                    .handle_content_type(hint, purpose),
+                InputMethodEvent::Done => im_service_ref.borrow_mut().handle_done(),
+                InputMethodEvent::Unavailable => im_service_ref.borrow_mut().handle_unavailable(),
                 _ => (),
             },
         });
