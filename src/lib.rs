@@ -13,7 +13,7 @@ use zwp_input_method::input_method_unstable_v2::zwp_input_method_v2::Event as In
 use zwp_input_method::input_method_unstable_v2::zwp_input_method_v2::ZwpInputMethodV2;
 
 pub enum SubmitError {
-    /// The input method had not been activated
+    /// Input method was not activ
     NotActive,
 }
 
@@ -92,7 +92,6 @@ impl<T: 'static + KeyboardVisability + HintPurpose> IMServiceRc<T> {
 
     fn assign_filter(&self, im_service: Rc<RefCell<IMServiceRc<T>>>) {
         let filter = Filter::new(move |event, _, _| {
-            println!("Filter");
             match event {
                 event_enum::Events::InputMethod { event, .. } => match event {
                     InputMethodEvent::Activate => im_service.borrow_mut().handle_activate(),
@@ -155,7 +154,7 @@ impl<T: 'static + KeyboardVisability + HintPurpose> IMServiceRc<T> {
     }
 
     fn handle_activate(&mut self) {
-        println!("activate");
+        println!("imput_method_service: activate");
         self.preedit_string = String::new();
         self.pending = IMProtocolState {
             active: true,
@@ -164,14 +163,14 @@ impl<T: 'static + KeyboardVisability + HintPurpose> IMServiceRc<T> {
     }
 
     fn handle_deactivate(&mut self) {
-        println!("deactivate");
+        println!("imput_method_service: deactivate");
         self.pending = IMProtocolState {
             active: false,
             ..self.pending.clone()
         };
     }
     fn handle_surrounding_text(&mut self, text: String, cursor: u32, anchor: u32) {
-        println!("surrounding_text");
+        println!("imput_method_service: surrounding_text");
         self.pending = IMProtocolState {
             surrounding_text: text,
             surrounding_cursor: cursor,
@@ -180,7 +179,7 @@ impl<T: 'static + KeyboardVisability + HintPurpose> IMServiceRc<T> {
     }
 
     fn handle_text_change_cause(&mut self, cause: ChangeCause) {
-        println!("text_change_cause");
+        println!("imput_method_service: text_change_cause");
         self.pending = IMProtocolState {
             text_change_cause: cause,
             ..self.pending.clone()
@@ -188,7 +187,7 @@ impl<T: 'static + KeyboardVisability + HintPurpose> IMServiceRc<T> {
     }
 
     fn handle_content_type(&mut self, hint: ContentHint, purpose: ContentPurpose) {
-        println!("content_type");
+        println!("imput_method_service: content_type");
         self.pending = IMProtocolState {
             content_hint: hint,
             content_purpose: purpose,
@@ -197,7 +196,7 @@ impl<T: 'static + KeyboardVisability + HintPurpose> IMServiceRc<T> {
     }
 
     fn handle_done(&mut self) {
-        println!("done");
+        println!("imput_method_service: done");
         let active_changed = self.current.active ^ self.pending.active;
 
         self.current = self.pending.clone();
@@ -218,7 +217,7 @@ impl<T: 'static + KeyboardVisability + HintPurpose> IMServiceRc<T> {
     }
 
     fn handle_unavailable(&mut self) {
-        println!("unavailable");
+        println!("imput_method_service: unavailable");
         self.im.destroy();
         self.current.active = false;
         self.connector.hide_keyboard();
