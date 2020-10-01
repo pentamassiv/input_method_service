@@ -1,14 +1,18 @@
 [package]
-name = "input_method_service"
-version = "0.1.0"
+name = "zwp-input-method-service"
+version = "0.2.1"
 authors = ["pentamassiv <pentamassiv@posteo.de>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+description = "Safe wrapper to easily use the zwp-input-method protocol"
+repository = "https://github.com/grelltrier/zwp-input-method-service"
+keywords = ["wayland", "virtual_keyboard", "wayland-scanner", "unstable", "wayland-protocols"]
+categories = ["gui", "os::linux-apis"]
+documentation = "https://docs.rs/zwp-input-method-service"
 
 [dependencies]
-wayland-client = {version="0.27", features = ["use_system_lib"]}
-wayland-protocols = {version="0.27", features = ["client", "unstable_protocols"]}
-zwp-virtual-keyboard = "0.1"
+wayland-client = {version="0.28", features = ["use_system_lib"]}
+wayland-protocols = {version="0.28", features = ["client", "unstable_protocols"]}
+zwp-virtual-keyboard = "0.2"
 input_event_codes_hashmap = "0.1.0"
-zwp-input-method = "0.1.0"
+zwp-input-method = "0.2.0"
