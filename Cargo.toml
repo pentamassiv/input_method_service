@@ -16,3 +16,4 @@ wayland-protocols = {version="0.28", features = ["client", "unstable_protocols"]
 zwp-virtual-keyboard = "0.2"
 input_event_codes_hashmap = "0.1.0"
 zwp-input-method = "0.2.0"
+log = "0.4"
