@@ -1,6 +1,6 @@
 [package]
 name = "zwp-input-method-service"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["pentamassiv <pentamassiv@posteo.de>"]
 edition = "2018"
 license = "MIT"

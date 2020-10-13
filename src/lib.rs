@@ -50,7 +50,7 @@ impl Default for IMProtocolState {
     fn default() -> IMProtocolState {
         IMProtocolState {
             surrounding_text: String::new(),
-            surrounding_cursor: 0, // TODO: mark that there's no cursor
+            surrounding_cursor: 0,
             content_hint: ContentHint::None,
             content_purpose: ContentPurpose::Normal,
             text_change_cause: ChangeCause::InputMethod,
@@ -153,6 +153,10 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
         self.current.active
     }
 
+    fn get_surrounding_text(&self) -> String {
+        self.current.surrounding_text.clone()
+    }
+
     fn handle_activate(&mut self) {
         self.preedit_string = String::new();
         self.pending = IMProtocolState {
@@ -237,5 +241,8 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMService<T> {
 
     pub fn is_active(&self) -> bool {
         self.im_service_arc.lock().unwrap().is_active()
+    }
+    pub fn get_surrounding_text(&self) -> String {
+        self.im_service_arc.lock().unwrap().get_surrounding_text()
     }
 }
