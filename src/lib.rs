@@ -1,4 +1,4 @@
-//! This crate provides an easy to use interface for the zwp_input_method_v2 protocol
+//! This crate provides an easy to use interface for the zwp_input_method_v2 protocol.
 //! It allows a wayland client to serve as an input method for other wayland-clients. This could be used for virtual keyboards
 //!
 #[macro_use]
@@ -34,6 +34,7 @@ mod event_enum {
 }
 
 /// Trait to get notified when the keyboard should be shown or hidden
+///
 /// If the user clicks for example on a text field, the method show_keyboard() is called
 pub trait KeyboardVisibility {
     fn show_keyboard(&self);
@@ -71,6 +72,7 @@ impl Default for IMProtocolState {
 
 #[derive(Clone, Debug)]
 /// Manages the pending state and the current state of the input method.
+///
 /// It is called IMServiceArc and not IMService because the new() method
 /// wraps IMServiceArc and returns Arc<Mutex<IMServiceArc<T>>>. This is required because it's state could get changed by multiple threads.
 /// One thread could handle requests while the other one handles events from the wayland-server
@@ -83,7 +85,7 @@ struct IMServiceArc<T: 'static + KeyboardVisibility + HintPurpose> {
 }
 
 impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
-    /// Creates a new IMServiceArc wrapped in Arc<Mutex< >>
+    /// Creates a new IMServiceArc wrapped in Arc<Mutex<Self>>
     fn new(
         seat: &WlSeat,
         im_manager: Main<ZwpInputMethodManagerV2>,
@@ -144,6 +146,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Sends a 'commit_string' request to the wayland-server
+    ///
     /// INPUTS: text -> Text that will be committed
     fn commit_string(&mut self, text: String) -> Result<(), SubmitError> {
         info!("Commit string '{}'", text);
@@ -166,8 +169,11 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Sends a 'delete_surrounding_text' request to the wayland server
+    ///
     /// INPUTS:
+    ///
     /// before -> number of chars to delete from the surrounding_text going left from the cursor
+    ///
     /// after  -> number of chars to delete from the surrounding_text going right from the cursor
     fn delete_surrounding_text(&mut self, before: u32, after: u32) -> Result<(), SubmitError> {
         info!(
@@ -190,6 +196,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Sends a 'commit' request to the wayland server
+    ///
     /// This makes the pending changes permanent
     fn commit(&mut self) -> Result<(), SubmitError> {
         info!("Commit the changes");
@@ -220,6 +227,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Handles the 'activate' event sent from the wayland server
+    ///
     /// This method should never be called from the client
     fn handle_activate(&mut self) {
         info!("handle_activate() was called");
@@ -230,6 +238,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Handles the 'deactivate' event sent from the wayland server
+    ///
     /// This method should never be called from the client
     fn handle_deactivate(&mut self) {
         info!("handle_deactivate() was called");
@@ -237,6 +246,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Handles the 'surrounding_text' event sent from the wayland server
+    ///
     /// This method should never be called from the client
     fn handle_surrounding_text(&mut self, text: String, cursor: u32, anchor: u32) {
         info!("handle_surrounding_text() was called");
@@ -245,6 +255,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Handles the 'text_change_cause' event sent from the wayland server
+    ///
     /// This method should never be called from the client
     fn handle_text_change_cause(&mut self, cause: ChangeCause) {
         info!("handle_text_change_cause() was called");
@@ -252,6 +263,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Handles the 'content_type' event sent from the wayland server
+    ///
     /// This method should never be called from the client
     fn handle_content_type(&mut self, hint: ContentHint, purpose: ContentPurpose) {
         info!("handle_content_type() was called");
@@ -260,6 +272,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Handles the 'done' event sent from the wayland server
+    ///
     /// This method should never be called from the client
     fn handle_done(&mut self) {
         info!("handle_done() was called");
@@ -267,6 +280,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Handles the 'unavailable' event sent from the wayland server
+    ///
     /// This method should never be called from the client
     fn handle_unavailable(&mut self) {
         info!("handle_unavailable() was called");
@@ -276,7 +290,9 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// This is a helper method
+    ///
     /// It moves the values of self.pending to self.current and notifies the connector, to show or hide the keyboard.
+    ///
     /// It should only be called if the wayland-server or the client committed the pending changes
     fn pending_becomes_current(&mut self) {
         info!("The pending protocol state became the current state");
@@ -298,18 +314,29 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// This is a helper method for the delete_surrounding_text method
+    ///
     /// INPUTS:
+    ///
     /// before -> number of chars to delete from the surrounding_text going left from the cursor
+    ///
     /// after  -> number of chars to delete from the surrounding_text going right from the cursor
     ///
+    ///
     /// OUTPUTS:
+    ///
     /// before (limited) -> number of chars to delete from the surrounding_text going left from the cursor  (limited)
+    ///
     /// after  (limited) -> number of chars to delete from the surrounding_text going right from the cursor (limited)
     ///
+    ///
     /// The wayland server ignores 'delete_surrounding_text' requests under the following conditions:
+    ///
     /// A: cursor_position < before
+    ///
     ///   or
+    ///
     /// B: cursor_position + after > surrounding_text.len()
+    ///
     /// This method limits the values of before and after to those maximums so no requests will be ignored.
     fn limit_before_after(&self, before: u32, after: u32) -> (u32, u32) {
         let cursor_position = self.pending.cursor;
@@ -329,8 +356,11 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// This is a helper method for the delete_surrounding_text method
+    ///
     /// INPUTS:
+    ///
     /// before -> number of chars to delete from the surrounding_text going left from the cursor
+    ///
     /// after  -> number of chars to delete from the surrounding_text going right from the cursor
     ///
     /// This method removes the amount of chars requested from self.pending.surrounding_text. This deletion not only affects the surrounding_text
@@ -378,6 +408,7 @@ pub struct IMService<T: 'static + KeyboardVisibility + HintPurpose> {
 }
 
 impl<T: 'static + KeyboardVisibility + HintPurpose> IMService<T> {
+    /// Create a new IMService. The connector must implement the traits KeyboardVisibility and HintPurpose
     pub fn new(
         seat: &WlSeat,
         im_manager: Main<ZwpInputMethodManagerV2>,
@@ -388,14 +419,20 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMService<T> {
     }
 
     /// Sends a 'commit_string' request to the wayland-server
-    /// INPUTS: text -> Text that will be committed
+    ///
+    /// INPUTS:
+    ///
+    /// text -> Text that will be committed
     pub fn commit_string(&self, text: String) -> Result<(), SubmitError> {
         self.im_service_arc.lock().unwrap().commit_string(text)
     }
 
     /// Sends a 'delete_surrounding_text' request to the wayland server
+    ///
     /// INPUTS:
+    ///
     /// before -> number of chars to delete from the surrounding_text going left from the cursor
+    ///
     /// after  -> number of chars to delete from the surrounding_text going right from the cursor
     pub fn delete_surrounding_text(&self, before: u32, after: u32) -> Result<(), SubmitError> {
         info!("Delete surrounding text ");
@@ -406,6 +443,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMService<T> {
     }
 
     /// Sends a 'commit' request to the wayland server
+    ///
     /// This makes the pending changes permanent
     pub fn commit(&self) -> Result<(), SubmitError> {
         self.im_service_arc.lock().unwrap().commit()
