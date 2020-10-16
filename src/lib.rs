@@ -220,10 +220,14 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
         self.current.active
     }
 
-    /// Returns the current surrounding_text
-    fn get_surrounding_text(&self) -> String {
+    /// Returns a tuple of the current strings left and right of the cursor
+    fn get_surrounding_text(&self) -> (String, String) {
         info!("Requested surrounding text");
-        self.current.surrounding_text.clone()
+        let (left_str, right_str) = self
+            .pending
+            .surrounding_text
+            .split_at(self.current.cursor.try_into().unwrap());
+        (left_str.to_string(), right_str.to_string())
     }
 
     /// Handles the 'activate' event sent from the wayland server
@@ -454,8 +458,8 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMService<T> {
         self.im_service_arc.lock().unwrap().is_active()
     }
 
-    /// Returns the current surrounding_text
-    pub fn get_surrounding_text(&self) -> String {
+    /// Returns a tuple of the current strings left and right of the cursor
+    pub fn get_surrounding_text(&self) -> (String, String) {
         self.im_service_arc.lock().unwrap().get_surrounding_text()
     }
 }
