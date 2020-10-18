@@ -265,7 +265,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurround
     ///
     /// This method should never be called from the client
     fn handle_surrounding_text(&mut self, text: String, cursor: u32, anchor: u32) {
-        info!("handle_surrounding_text() was called");
+        info!("handle_surrounding_text(text: '{}', cursor: {}) was called",text, cursor);
         self.pending.surrounding_text = text;
         self.pending.cursor = cursor;
     }
