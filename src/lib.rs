@@ -314,17 +314,23 @@ impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurround
         info!("The pending protocol state became the current state");
         let active_changed = self.current.active ^ self.pending.active;
 
-        if self.current.surrounding_text != self.pending.surrounding_text {
+        let text_changed = self.current.surrounding_text != self.pending.surrounding_text;
+
+        // Make pending changes permanent
+        self.current = self.pending.clone();
+
+        if text_changed {
+            info!(
+                "The surrounding text changed to '{}'",
+                self.current.surrounding_text
+            );
             let (left_str, right_str) = self
-                .pending
+                .current
                 .surrounding_text
                 .split_at(self.current.cursor.try_into().unwrap());
             let (left_str, right_str) = (left_str.to_string(), right_str.to_string());
             self.content_connector.text_changed(left_str, right_str);
         }
-
-        // Make pending changes permanent
-        self.current = self.pending.clone();
 
         // Notify connector about changes
         if active_changed {
