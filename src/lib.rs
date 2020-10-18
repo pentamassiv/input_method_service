@@ -41,6 +41,10 @@ pub trait KeyboardVisibility {
     fn hide_keyboard(&self);
 }
 
+pub trait ReceiveSurroundingText {
+    fn text_changed(&self, string_left_of_cursor: String, string_right_of_cursor: String);
+}
+
 /// Trait to get notified when the hint or the purpose of the content changes
 pub trait HintPurpose {
     fn set_hint_purpose(&self, content_hint: ContentHint, content_purpose: ContentPurpose);
@@ -76,28 +80,36 @@ impl Default for IMProtocolState {
 /// It is called IMServiceArc and not IMService because the new() method
 /// wraps IMServiceArc and returns Arc<Mutex<IMServiceArc<T>>>. This is required because it's state could get changed by multiple threads.
 /// One thread could handle requests while the other one handles events from the wayland-server
-struct IMServiceArc<T: 'static + KeyboardVisibility + HintPurpose> {
+struct IMServiceArc<
+    T: 'static + KeyboardVisibility + HintPurpose,
+    D: 'static + ReceiveSurroundingText,
+> {
     im: Main<ZwpInputMethodV2>,
-    connector: T,
+    ui_connector: T,
+    content_connector: D,
     pending: IMProtocolState,
     current: IMProtocolState,
     serial: Wrapping<u32>,
 }
 
-impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
+impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurroundingText>
+    IMServiceArc<T, D>
+{
     /// Creates a new IMServiceArc wrapped in Arc<Mutex<Self>>
     fn new(
         seat: &WlSeat,
         im_manager: Main<ZwpInputMethodManagerV2>,
-        connector: T,
-    ) -> Arc<Mutex<IMServiceArc<T>>> {
+        ui_connector: T,
+        content_connector: D,
+    ) -> Arc<Mutex<IMServiceArc<T, D>>> {
         // Get ZwpInputMethodV2 from ZwpInputMethodManagerV2
         let im = im_manager.get_input_method(seat);
 
         // Create IMServiceArc with default values
         let im_service = IMServiceArc {
             im,
-            connector,
+            ui_connector,
+            content_connector,
             pending: IMProtocolState::default(),
             current: IMProtocolState::default(),
             serial: Wrapping(0u32),
@@ -116,7 +128,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
     }
 
     /// Assigns a filter to the wayland event queue to allow IMServiceArc to handle events from ZwpInputMethodV2
-    fn assign_filter(&self, im_service: Arc<Mutex<IMServiceArc<T>>>) {
+    fn assign_filter(&self, im_service: Arc<Mutex<IMServiceArc<T, D>>>) {
         let filter = Filter::new(move |event, _, _| match event {
             event_enum::Events::InputMethod { event, .. } => match event {
                 InputMethodEvent::Activate => im_service.lock().unwrap().handle_activate(),
@@ -290,7 +302,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
         info!("handle_unavailable() was called");
         self.im.destroy();
         self.current.active = false;
-        self.connector.hide_keyboard();
+        self.ui_connector.hide_keyboard();
     }
 
     /// This is a helper method
@@ -302,17 +314,26 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
         info!("The pending protocol state became the current state");
         let active_changed = self.current.active ^ self.pending.active;
 
+        if self.current.surrounding_text != self.pending.surrounding_text {
+            let (left_str, right_str) = self
+                .pending
+                .surrounding_text
+                .split_at(self.current.cursor.try_into().unwrap());
+            let (left_str, right_str) = (left_str.to_string(), right_str.to_string());
+            self.content_connector.text_changed(left_str, right_str);
+        }
+
         // Make pending changes permanent
         self.current = self.pending.clone();
 
         // Notify connector about changes
         if active_changed {
             if self.current.active {
-                self.connector.show_keyboard();
-                self.connector
+                self.ui_connector.show_keyboard();
+                self.ui_connector
                     .set_hint_purpose(self.current.content_hint, self.current.content_purpose);
             } else {
-                self.connector.hide_keyboard();
+                self.ui_connector.hide_keyboard();
             };
         }
     }
@@ -407,18 +428,24 @@ impl<T: 'static + KeyboardVisibility + HintPurpose> IMServiceArc<T> {
 
 #[derive(Clone, Debug)]
 /// Manages the pending state and the current state of the input method.
-pub struct IMService<T: 'static + KeyboardVisibility + HintPurpose> {
-    im_service_arc: Arc<Mutex<IMServiceArc<T>>>, // provides an easy to use interface by hiding the Arc<Mutex<>>
+pub struct IMService<
+    T: 'static + KeyboardVisibility + HintPurpose,
+    D: 'static + ReceiveSurroundingText,
+> {
+    im_service_arc: Arc<Mutex<IMServiceArc<T, D>>>, // provides an easy to use interface by hiding the Arc<Mutex<>>
 }
 
-impl<T: 'static + KeyboardVisibility + HintPurpose> IMService<T> {
+impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurroundingText>
+    IMService<T, D>
+{
     /// Create a new IMService. The connector must implement the traits KeyboardVisibility and HintPurpose
     pub fn new(
         seat: &WlSeat,
         im_manager: Main<ZwpInputMethodManagerV2>,
-        connector: T,
-    ) -> IMService<T> {
-        let im_service_arc = IMServiceArc::new(seat, im_manager, connector);
+        ui_connector: T,
+        content_connector: D,
+    ) -> IMService<T, D> {
+        let im_service_arc = IMServiceArc::new(seat, im_manager, ui_connector, content_connector);
         IMService { im_service_arc }
     }
 
