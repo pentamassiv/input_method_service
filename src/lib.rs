@@ -264,8 +264,12 @@ impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurround
     /// Handles the 'surrounding_text' event sent from the wayland server
     ///
     /// This method should never be called from the client
+    /// The 'anchor' parameter is currently not being used
     fn handle_surrounding_text(&mut self, text: String, cursor: u32, anchor: u32) {
-        info!("handle_surrounding_text(text: '{}', cursor: {}) was called",text, cursor);
+        info!(
+            "handle_surrounding_text(text: '{}', cursor: {}) was called",
+            text, cursor
+        );
         self.pending.surrounding_text = text;
         self.pending.cursor = cursor;
     }
