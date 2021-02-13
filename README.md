@@ -1,5 +1,6 @@
 [![Crate](https://img.shields.io/crates/v/zwp-input-method-service.svg)](https://crates.io/crates/zwp-input-method-service)
 [![dependency status](https://deps.rs/repo/github/grelltrier/input_method_service/status.svg)](https://deps.rs/repo/github/grelltrier/input_method_service)
+![Build](https://github.com/grelltrier/input_method_service/workflows/Build/badge.svg)
 
 # zwp-input-method-service
 
