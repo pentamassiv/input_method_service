@@ -1,6 +1,6 @@
 [package]
 name = "zwp-input-method-service"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["pentamassiv <pentamassiv@posteo.de>"]
 edition = "2018"
 license = "MIT"
@@ -11,8 +11,8 @@ categories = ["gui", "os::linux-apis"]
 documentation = "https://docs.rs/zwp-input-method-service"
 
 [dependencies]
-wayland-client = {version="0.28", features = ["use_system_lib"]}
-wayland-protocols = {version="0.28", features = ["client", "unstable_protocols"]}
+wayland-client = {version="0.29", features = ["use_system_lib"]}
+wayland-protocols = {version="0.29", features = ["client", "unstable_protocols"]}
 zwp-virtual-keyboard = "0.2"
 input_event_codes_hashmap = "0.1"
 zwp-input-method = "0.2"
