@@ -33,14 +33,15 @@ mod event_enum {
     );
 }
 
-/// Trait to get notified when the keyboard should be shown or hidden
+/// Trait to get notified when the input method should be active or deactivated
 ///
-/// If the user clicks for example on a text field, the method show_keyboard() is called
-pub trait KeyboardVisibility {
-    fn show_keyboard(&self);
-    fn hide_keyboard(&self);
+/// If the user clicks for example on a text field, the method activate_im() is called
+pub trait IMVisibility {
+    fn activate_im(&self);
+    fn deactivate_im(&self);
 }
 
+/// Trait to get notified when the text surrounding the cursor changes
 pub trait ReceiveSurroundingText {
     fn text_changed(&self, string_left_of_cursor: String, string_right_of_cursor: String);
 }
@@ -50,7 +51,7 @@ pub trait HintPurpose {
     fn set_hint_purpose(&self, content_hint: ContentHint, content_purpose: ContentPurpose);
 }
 
-/// Describes the desired state of the input method as requested by the server
+/// Stores the state of the input method
 #[derive(Clone, Debug)]
 struct IMProtocolState {
     surrounding_text: String,
@@ -80,10 +81,7 @@ impl Default for IMProtocolState {
 /// It is called IMServiceArc and not IMService because the new() method
 /// wraps IMServiceArc and returns Arc<Mutex<IMServiceArc<T>>>. This is required because it's state could get changed by multiple threads.
 /// One thread could handle requests while the other one handles events from the wayland-server
-struct IMServiceArc<
-    T: 'static + KeyboardVisibility + HintPurpose,
-    D: 'static + ReceiveSurroundingText,
-> {
+struct IMServiceArc<T: 'static + IMVisibility + HintPurpose, D: 'static + ReceiveSurroundingText> {
     im: Main<ZwpInputMethodV2>,
     ui_connector: T,
     content_connector: D,
@@ -92,7 +90,7 @@ struct IMServiceArc<
     serial: Wrapping<u32>,
 }
 
-impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurroundingText>
+impl<T: 'static + IMVisibility + HintPurpose, D: 'static + ReceiveSurroundingText>
     IMServiceArc<T, D>
 {
     /// Creates a new IMServiceArc wrapped in Arc<Mutex<Self>>
@@ -160,6 +158,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurround
     /// Sends a 'commit_string' request to the wayland-server
     ///
     /// INPUTS: text -> Text that will be committed
+    /// Wayland messages have a maximum length so the length of the text must not exceed 4000 bytes
     fn commit_string(&mut self, text: String) -> Result<(), SubmitError> {
         info!("Commit string '{}'", text);
         // Check if proxy is still alive. If the proxy was dead, the requests would fail silently
@@ -306,7 +305,7 @@ impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurround
         info!("handle_unavailable() was called");
         self.im.destroy();
         self.current.active = false;
-        self.ui_connector.hide_keyboard();
+        self.ui_connector.deactivate_im();
     }
 
     /// This is a helper method
@@ -339,11 +338,11 @@ impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurround
         // Notify connector about changes
         if active_changed {
             if self.current.active {
-                self.ui_connector.show_keyboard();
+                self.ui_connector.activate_im();
                 self.ui_connector
                     .set_hint_purpose(self.current.content_hint, self.current.content_purpose);
             } else {
-                self.ui_connector.hide_keyboard();
+                self.ui_connector.deactivate_im();
             };
         }
     }
@@ -438,17 +437,12 @@ impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurround
 
 #[derive(Clone, Debug)]
 /// Manages the pending state and the current state of the input method.
-pub struct IMService<
-    T: 'static + KeyboardVisibility + HintPurpose,
-    D: 'static + ReceiveSurroundingText,
-> {
+pub struct IMService<T: 'static + IMVisibility + HintPurpose, D: 'static + ReceiveSurroundingText> {
     im_service_arc: Arc<Mutex<IMServiceArc<T, D>>>, // provides an easy to use interface by hiding the Arc<Mutex<>>
 }
 
-impl<T: 'static + KeyboardVisibility + HintPurpose, D: 'static + ReceiveSurroundingText>
-    IMService<T, D>
-{
-    /// Create a new IMService. The connector must implement the traits KeyboardVisibility and HintPurpose
+impl<T: 'static + IMVisibility + HintPurpose, D: 'static + ReceiveSurroundingText> IMService<T, D> {
+    /// Create a new IMService. The connector must implement the traits IMVisibility and HintPurpose
     pub fn new(
         seat: &WlSeat,
         im_manager: Main<ZwpInputMethodManagerV2>,
