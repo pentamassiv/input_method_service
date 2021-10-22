@@ -2,7 +2,7 @@
 name = "zwp-input-method-service"
 version = "0.4.3"
 authors = ["pentamassiv <pentamassiv@posteo.de>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "Safe wrapper to easily use the zwp-input-method protocol"
 repository = "https://github.com/grelltrier/input_method_service"
