@@ -4,4 +4,4 @@
 
 # zwp-input-method-service
 
-This crate provides a wrapper for the zwp-input-method protocol to simplify the integration of the protocol
+This crate provides a wrapper for the zwp-input-method protocol to simplify the integration of the protocol.
