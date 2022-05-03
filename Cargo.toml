@@ -1,19 +1,21 @@
 [package]
 name = "zwp-input-method-service"
-version = "0.4.3"
+version = "0.5.0"
 authors = ["pentamassiv <pentamassiv@posteo.de>"]
-edition = "2021"
 license = "MIT"
 description = "Safe wrapper to easily use the zwp-input-method protocol"
 repository = "https://github.com/grelltrier/input_method_service"
+documentation = "https://docs.rs/zwp-input-method-service"
 keywords = ["wayland", "virtual_keyboard", "wayland-scanner", "unstable", "wayland-protocols"]
 categories = ["gui", "os::linux-apis"]
-documentation = "https://docs.rs/zwp-input-method-service"
+edition = "2021"
 
 [dependencies]
 wayland-client = {version="0.29", features = ["use_system_lib"]}
 wayland-protocols = {version="0.29", features = ["client", "unstable_protocols"]}
-zwp-virtual-keyboard = "0.2"
-input_event_codes_hashmap = "0.1"
-zwp-input-method = "0.2"
-log = "0.4"
+input-event-codes = "5.16.8"
+zwp-input-method = "0.3"
+log = { version = "0.4", optional = true }
+
+[features]
+debug = ["log"]
