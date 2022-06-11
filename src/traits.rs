@@ -1,9 +1,9 @@
 use super::SubmitError;
 use wayland_client::{protocol::wl_seat::WlSeat, Main};
+use wayland_protocols::misc::zwp_input_method_v2::client::zwp_input_method_manager_v2::ZwpInputMethodManagerV2;
 use wayland_protocols::unstable::text_input::v3::client::zwp_text_input_v3::{
     ContentHint, ContentPurpose,
 };
-use zwp_input_method::input_method_unstable_v2::zwp_input_method_manager_v2::ZwpInputMethodManagerV2;
 
 /// All input methods must be able to handle these functions
 /// This helps write test cases, because they can be generic

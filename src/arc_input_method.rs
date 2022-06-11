@@ -2,11 +2,12 @@ use std::cmp;
 use std::num::Wrapping;
 use std::sync::{Arc, Mutex};
 use wayland_client::{protocol::wl_seat::WlSeat, Filter, Main};
+use wayland_protocols::misc::zwp_input_method_v2::client::zwp_input_method_manager_v2::ZwpInputMethodManagerV2;
 use wayland_protocols::unstable::text_input::v3::client::zwp_text_input_v3::{
     ChangeCause, ContentHint, ContentPurpose,
 };
-use zwp_input_method::input_method_unstable_v2::zwp_input_method_manager_v2::ZwpInputMethodManagerV2;
-use zwp_input_method::input_method_unstable_v2::zwp_input_method_v2::{
+
+use wayland_protocols::misc::zwp_input_method_v2::client::zwp_input_method_v2::{
     Event as InputMethodEvent, ZwpInputMethodV2,
 };
 
@@ -16,7 +17,7 @@ use super::SubmitError;
 // Mandatory conversion to apply filter to ZwpInputMethodV2
 mod event_enum {
     use wayland_client::event_enum;
-    use zwp_input_method::input_method_unstable_v2::zwp_input_method_v2::ZwpInputMethodV2;
+    use wayland_protocols::misc::zwp_input_method_v2::client::zwp_input_method_v2::ZwpInputMethodV2;
     event_enum!(
         Events | InputMethod => ZwpInputMethodV2
     );

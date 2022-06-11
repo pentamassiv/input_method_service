@@ -7,7 +7,7 @@ extern crate log;
 
 use std::sync::{Arc, Mutex};
 use wayland_client::{protocol::wl_seat::WlSeat, Main};
-use zwp_input_method::input_method_unstable_v2::zwp_input_method_manager_v2::ZwpInputMethodManagerV2;
+use wayland_protocols::misc::zwp_input_method_v2::client::zwp_input_method_manager_v2::ZwpInputMethodManagerV2;
 
 mod traits;
 pub use traits::*;
