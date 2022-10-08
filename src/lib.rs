@@ -2,6 +2,7 @@
 //! It allows a wayland client to serve as an input method for other wayland-clients. This could be used for virtual keyboards
 //!
 #[cfg(feature = "debug")]
+#[warn(clippy::pedantic)]
 #[macro_use]
 extern crate log;
 
